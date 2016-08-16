@@ -1,21 +1,29 @@
-#https://pinout.xyz/
+"""
+Tweets and LEDs
+A silly little application to blink leds based on tweets.
+"""
 
 import json
-import RPi.GPIO as GPIO
 import tweepy
-from Led import Led
-from Listener import Listener
+from lib.ledbar import LedBar
+from lib.listener import Listener
 
-with open('config.json') as json_data_file:
-    config = json.load(json_data_file)
+def main():
+    """Initializes LEDs and kicks off twitter Stream"""
 
-GPIO.setmode(GPIO.BCM)
-leds = [Led(17), Led(27), Led(22)]
+    with open('config.json') as json_data_file:
+        config = json.load(json_data_file)
 
-auth = tweepy.OAuthHandler(config['twitterApi']['ckey'], config['twitterApi']['csecret'])
-auth.set_access_token(config['twitterApi']['atoken'], config['twitterApi']['asecret'])
+    api_keys = config['twitterApi']
+    leds = LedBar(14, 15, 18, 23, 24, 25, 8, 7)
 
-listener = Listener(leds)
+    auth = tweepy.OAuthHandler(api_keys['ckey'], api_keys['csecret'])
+    auth.set_access_token(api_keys['atoken'], api_keys['asecret'])
 
-twitterStream = tweepy.Stream(auth, listener)
-twitterStream.filter(track=['javascript'])
+    listener = Listener(leds)
+
+    twitter_stream = tweepy.Stream(auth, listener)
+    twitter_stream.filter(track=['javascript'])
+
+if __name__ == '__main__':
+    main()
