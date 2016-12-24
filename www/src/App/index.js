@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import './app.css';
-import SearchForm from './SearchForm';
-import Stream from './Stream';
+import ConfigForm from '../ConfigForm';
+import StreamLog from '../StreamLog';
 
 class App extends Component {
   constructor(props) {
@@ -15,13 +15,13 @@ class App extends Component {
   render() {
     return (
       <div className="app">
-        <SearchForm onSubmit={this.changeStream} />
-        <Stream keyword={this.state.keyword} threshold={this.state.threshold} />
+        <ConfigForm onSubmit={this.changeConfig} />
+        <StreamLog keyword={this.state.keyword} threshold={this.state.threshold} />
       </div>
     );
   }
 
-  changeStream = (keyword, threshold) => {
+  changeConfig = (keyword, threshold) => {
     this.setState({keyword, threshold});
   }
 }

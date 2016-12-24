@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import './stream-log.css';
 
 class Stream extends Component {
   render() {
@@ -10,9 +11,9 @@ class Stream extends Component {
     );
 
     return (
-      <section className="stream-wrap">
+      <section>
         <h4>{this.props.keyword}</h4>
-        <div className="stream">
+        <div>
           {listItems}
         </div>
       </section>
