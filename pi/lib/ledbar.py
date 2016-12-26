@@ -10,10 +10,23 @@ class LedBar(object):
     def __init__(self, *leds):
         GPIO.setmode(GPIO.BCM)
         self.series = [Led(x) for x in leds]
+        self.threshold = 30 # seconds
+        self.ticks = 0
 
     def __del__(self):
         logging.info("cleaning up LEDs")
         GPIO.cleanup()
+
+    def start(self, threshold):
+        """Resets the LEDs"""
+        self.threshold = threshold
+        self.ticks = 0
+        for led in self.series:
+            led.off()
+
+    def tick(self):
+        """Increment tweets counter and adjust LEDs if threshold met"""
+        self.ticks += 1
 
     def sequence_blink(self):
         """Blink each LED in succession"""

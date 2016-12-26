@@ -8,7 +8,7 @@ app.use(express.static('./build'));
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, './build', 'index.html')));
 
-app.listen(9000, () => console.log('App started!'));
+app.listen(8080, () => console.log('App started!'));
 
 // nodejs websocket
 /*const WebsocketServer = require('ws').Server;
@@ -25,4 +25,3 @@ wss.on('connection', (ws) => {
         ws.send(c.toString());
     }, 10000);
 });*/
-
