@@ -1,13 +1,13 @@
 """Twitter stream listener"""
 
 import json
-from tweepy.streaming import StreamListener
+import tweepy.streaming
 
-class Listener(StreamListener):
+class TwitterStreamListener(tweepy.streaming.StreamListener):
     """Twitter stream listener"""
 
     def __init__(self, leds):
-        print "listening for tweets"
+        print "Twitter listener started."
         self.leds = leds
 
     def on_data(self, data):

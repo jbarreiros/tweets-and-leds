@@ -1,7 +1,7 @@
 """Control the LEDs"""
 
-import RPi.GPIO as GPIO
 import time
+import RPi.GPIO as GPIO
 
 class LedBar(object):
     """Control a series of LEDs"""
