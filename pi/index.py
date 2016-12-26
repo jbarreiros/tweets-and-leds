@@ -3,6 +3,7 @@ Tweets and LEDs
 A silly little application to blink leds based on tweets.
 """
 
+import logging
 import json
 import tweepy
 import tornado.httpserver
@@ -13,10 +14,12 @@ from lib.ledbar import LedBar
 from lib.listener import TwitterStreamListener
 from lib.websocket import WebsocketHandler
 
+logging.basicConfig(level=logging.DEBUG)
+
 def init_twitter_listener():
     """Initializes LEDs and kicks off twitter Stream"""
 
-    with open('../config.json') as json_data_file:
+    with open('config.json') as json_data_file:
         config = json.load(json_data_file)
 
     api_keys = config['twitterApi']

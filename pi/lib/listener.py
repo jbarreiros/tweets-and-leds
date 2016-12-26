@@ -1,5 +1,6 @@
 """Twitter stream listener"""
 
+import logging
 import json
 import tweepy.streaming
 
@@ -7,14 +8,14 @@ class TwitterStreamListener(tweepy.streaming.StreamListener):
     """Twitter stream listener"""
 
     def __init__(self, leds):
-        print "Twitter listener started."
+        logging.info("Starting twitter stream listener")
         self.leds = leds
 
     def on_data(self, data):
         """Callback for when a tweet is received"""
         all_data = json.loads(data)
         tweet = all_data['text']
-        print tweet
+        logging.info("Received tweet: " + tweet)
         #self.leds.parallel_blink()
         self.leds.sequence_blink()
         return True
@@ -22,5 +23,5 @@ class TwitterStreamListener(tweepy.streaming.StreamListener):
     @classmethod
     def on_error(cls, status):
         """Error handler"""
-        print status
+        logging.error(status)
         return False

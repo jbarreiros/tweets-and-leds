@@ -1,6 +1,7 @@
 """Control the LEDs"""
 
 import time
+import logging
 import RPi.GPIO as GPIO
 
 class LedBar(object):
@@ -11,7 +12,7 @@ class LedBar(object):
         self.series = [Led(x) for x in leds]
 
     def __del__(self):
-        print 'cleaning up LEDs'
+        logging.info("cleaning up LEDs")
         GPIO.cleanup()
 
     def sequence_blink(self):

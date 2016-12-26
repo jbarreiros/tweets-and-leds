@@ -1,5 +1,6 @@
 """Websocket handler"""
 
+import logging
 import tornado.websocket
 
 class WebsocketHandler(tornado.websocket.WebSocketHandler):
@@ -9,10 +10,10 @@ class WebsocketHandler(tornado.websocket.WebSocketHandler):
         return True
 
     def open(self):
-        print("Websocket opened.")
+        logging.info("Websocket opened")
 
     def on_message(self, message):
         self.write_message("You said: " + message)
 
     def on_close(self):
-        print("Websocket closed.")
+        logging.info("Websocket closed")
