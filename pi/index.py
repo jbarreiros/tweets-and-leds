@@ -11,7 +11,7 @@ from lib.listener import Listener
 def main():
     """Initializes LEDs and kicks off twitter Stream"""
 
-    with open('config.json') as json_data_file:
+    with open('../config.json') as json_data_file:
         config = json.load(json_data_file)
 
     api_keys = config['twitterApi']
