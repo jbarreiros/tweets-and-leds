@@ -2,18 +2,19 @@ import React, { Component } from 'react';
 import './app.css';
 import ConfigForm from '../ConfigForm';
 import StreamLog from '../StreamLog';
-
-const ws = new WebSocket('ws://rasppiboyee.lan:9000/ws');
-ws.onopen = () => console.log('Websocket opened');
-ws.onerror = (error) => console.log('Websocket error', error);
-ws.onmessage = (e) => console.log('Websocket message received: ', e.data);
+import Socket from '../lib/Socket';
 
 class App extends Component {
   constructor(props) {
     super(props);
+
+    this.ws = new Socket('ws://rasppiboyee.lan:9000/ws');
+    this.ws.register(this.onSocketMessage);
+
     this.state = {
       keyword: '',
       threshold: null,
+      tweetList: [],
     };
   }
 
@@ -21,15 +22,25 @@ class App extends Component {
     return (
       <div className="app">
         <ConfigForm onSubmit={this.changeConfig} />
-        <StreamLog keyword={this.state.keyword} threshold={this.state.threshold} />
+        <StreamLog
+          keyword={this.state.keyword}
+          threshold={this.state.threshold}
+          tweetList={this.state.tweetList}
+        />
       </div>
     );
   }
 
   changeConfig = (keyword, threshold) => {
-    this.setState({keyword, threshold});
-    console.log('Send message to websocket', {keyword, threshold});
-    ws.send(JSON.stringify({keyword, threshold}));
+    this.setState({keyword, threshold, tweetList: []});
+    this.ws.sendMessage({keyword, threshold});
+  }
+
+  onSocketMessage = (data) => {
+    if (typeof data === 'object') {
+      let tweetList = [...this.state.tweetList, data];
+      this.setState({tweetList});
+    }
   }
 }
 

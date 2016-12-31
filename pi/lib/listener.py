@@ -14,7 +14,7 @@ class TwitterStreamListener(tweepy.streaming.StreamListener):
     def on_status(self, status):
         """Callback for when a tweet is received"""
         logging.info("Received tweet: " + status.text)
-        self.on_status_callback(status.text)
+        self.on_status_callback(status)
 
     def on_error(self, status_code):
         """Error handler"""
