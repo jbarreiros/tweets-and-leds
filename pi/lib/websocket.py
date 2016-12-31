@@ -11,14 +11,8 @@ from lib.listener import TwitterStreamListener
 class WebsocketHandler(tornado.websocket.WebSocketHandler):
     """Websocket handler"""
 
-    def __init__(self, application, request, **kwargs):
-        logging.info("Instantiating websocket")
-        super(WebsocketHandler, self).__init__(application, request, **kwargs)
-
-        # FIXME how to pass config into this?
-        with open('config.json') as json_data_file:
-            config = json.load(json_data_file)
-
+    def initialize(self, config):
+        logging.info("initializing websocket")
         self.led_bar = LedBar(config['led_gpio_pins'])
         self.twitter_stream = self.init_twitter_stream(config['twitter_api'])
 

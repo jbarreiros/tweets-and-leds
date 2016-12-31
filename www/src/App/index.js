@@ -3,7 +3,7 @@ import './app.css';
 import ConfigForm from '../ConfigForm';
 import StreamLog from '../StreamLog';
 
-const ws = new WebSocket('ws://rasppiboyee.lan:9000');
+const ws = new WebSocket('ws://rasppiboyee.lan:9000/ws');
 ws.onopen = () => console.log('Websocket opened');
 ws.onerror = (error) => console.log('Websocket error', error);
 ws.onmessage = (e) => console.log('Websocket message received: ', e.data);
