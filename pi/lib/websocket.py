@@ -5,7 +5,7 @@ import logging
 import tornado.websocket
 import tweepy
 
-from lib.ledbar import LedBar
+from lib.ledbar import ThresholdLedBar
 from lib.listener import TwitterStreamListener
 
 class WebsocketHandler(tornado.websocket.WebSocketHandler):
@@ -13,7 +13,7 @@ class WebsocketHandler(tornado.websocket.WebSocketHandler):
 
     def initialize(self, config):
         logging.info("initializing websocket")
-        # self.led_bar = LedBar(config['led_gpio_pins'])
+        self.led_bar = ThresholdLedBar(config['led_gpio_pins'])
         self.twitter_stream = self.init_twitter_stream(config['twitter_api'])
 
     def __del__(self):
