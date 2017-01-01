@@ -9,7 +9,7 @@ class App extends Component {
     super(props);
 
     this.ws = new Socket('ws://rasppiboyee.lan:9000/ws');
-    this.ws.register(this.onSocketMessage);
+    this.ws.register('new_tweet', this.onNewTweet);
 
     this.state = {
       keyword: '',
@@ -33,14 +33,17 @@ class App extends Component {
 
   changeConfig = (keyword, threshold) => {
     this.setState({keyword, threshold, tweetList: []});
-    this.ws.sendMessage({keyword, threshold});
+    this.ws.sendMessage('set_keyword', {keyword, threshold});
   }
 
-  onSocketMessage = (data) => {
-    if (typeof data === 'object') {
-      let tweetList = [...this.state.tweetList, data];
-      this.setState({tweetList});
+  onNewTweet = (data) => {
+    let tweetList = [data, ...this.state.tweetList];
+
+    if (tweetList.length > 10) {
+      tweetList.pop();
     }
+
+    this.setState({tweetList});
   }
 }
 

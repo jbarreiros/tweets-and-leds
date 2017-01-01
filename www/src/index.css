@@ -6,3 +6,9 @@ body {
 label {
   font-weight: bold;
 }
+
+.ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

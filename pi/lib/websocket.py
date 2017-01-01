@@ -30,7 +30,14 @@ class WebsocketHandler(tornado.websocket.WebSocketHandler):
 
     def on_tweet(self, tweet):
         """TwitterStreamListener callback"""
-        self.write_message(json.dumps(tweet._json))
+        data = {
+            'event': 'new_tweet',
+            'id': tweet.id,
+            'text': tweet.text,
+        }
+
+        self.write_message(json.dumps(data))
+        self.led_bar.start()
         # self.led_bar.tick()
 
     def check_origin(self, origin):
@@ -42,9 +49,13 @@ class WebsocketHandler(tornado.websocket.WebSocketHandler):
     def on_message(self, message):
         logging.info("Received websocket message: " + message)
         data = json.loads(message)
+
+        if data['event'] != 'set_keyword':
+            return
+
         self.twitter_stream.disconnect()
         self.twitter_stream.filter(track=[data['keyword']], async=True)
-        self.write_message(json.dumps({"success": True}))
+        self.write_message(json.dumps({'event': 'set_keyword', 'success': True}))
 
     def on_close(self):
         logging.info("Websocket closed")
