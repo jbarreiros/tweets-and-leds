@@ -5,7 +5,7 @@ class SearchForm extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      threshold: 5,
+      threshold: 10,
     };
   }
 

@@ -2,7 +2,17 @@
 
 import time
 import logging
+import threading
 import RPi.GPIO as GPIO
+
+def set_interval(interval, func, *args):
+    """Execute a function every x seconds"""
+    stopped = threading.Event()
+    def loop():
+        while not stopped.wait(interval):
+            func(*args)
+    threading.Thread(target=loop).start()
+    return stopped.set
 
 class Led(object):
     """Control a single LED"""
@@ -31,22 +41,63 @@ class LedBar(object):
         logging.info("cleaning up LEDs")
         GPIO.cleanup()
 
+    def start(self, **kwargs):
+        pass
+
+    def stop(self):
+        pass
+
+    def turn_off_all_leds(self):
+        for led in self.series:
+            led.off()
+
 class ThresholdLedBar(LedBar):
     def __init__(self, leds):
         super(ThresholdLedBar, self).__init__(leds)
-        self.threshold = 30
+        self.ticks_per_led = 0
+        self.ticks = 0
+        self.stop_tick_down = lambda: None
+
+    def __del__(self):
+        self.stop()
+
+    def start(self, **kwargs):
+        threshold = kwargs.get('threshold')
+
+        # clear current ticks and threshold
+        self.stop()
         self.ticks = 0
 
-    def start(self, threshold):
-        """Resets the LEDs"""
-        self.threshold = threshold
-        self.ticks = 0
-        for led in self.series:
-            led.off()
+        # start new threshold
+        self.ticks_per_led = len(self.series) / float(threshold)
+        self.stop_tick_down = set_interval(1, self.tick_down)
+        logging.info("New threshold: " + str(threshold) + " (" + str(self.ticks_per_led) + " per LED)")
+
+    def stop(self):
+        logging.info("Stopping ThresholdLedBar")
+        self.stop_tick_down()
+        self.turn_off_all_leds()
+
+    def tick_down(self):
+        logging.info("Stepping down from " + str(self.ticks))
+        if self.ticks > 0:
+            self.ticks -= 1
+        self.update_leds()
 
     def tick(self):
         """Increment tweets counter and adjust LEDs if threshold met"""
         self.ticks += 1
+        logging.info("Ticks incremented to " + str(self.ticks))
+        self.update_leds()
+
+    def update_leds(self):
+        num_leds_on = int(self.ticks * self.ticks_per_led)
+        logging.info("Number of LEDs to light is " + str(num_leds_on))
+        for idx, led in enumerate(self.series):
+            if idx < num_leds_on:
+                led.on()
+            else:
+                led.off()
 
 class SequenceLedBar(LedBar):
     """Blink each LED in succession"""
@@ -54,7 +105,7 @@ class SequenceLedBar(LedBar):
     def __init__(self, leds):
         super(SequenceLedBar, self).__init__(leds)
 
-    def start(self):
+    def start(self, **kwargs):
         for led in self.series:
             led.on()
             time.sleep(0.2)
@@ -66,25 +117,17 @@ class CylonLedBar(LedBar):
     def __init__(self, leds):
         super(CylonLedBar, self).__init__(leds)
 
-    def on(self, *leds):
-        for led in leds:
-            led.on()
-
-    def off(self, *leds):
-        for led in leds:
-            led.off()
-
-    def start(self):
+    def start(self, **kwargs):
         i = 0
         max_i = (len(self.series) - 1)
 
         while True:
-            self.on(self.series[i])
+            self.series[i].on()
 
             if i == 0:
-                self.off(self.series[max_i])
+                self.series[max_i].off()
             elif i > 0:
-                self.off(self.series[i-1])
+                self.series[i-1].off()
 
             time.sleep(0.1)
             i = i + 1

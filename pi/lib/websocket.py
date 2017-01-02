@@ -20,6 +20,30 @@ class WebsocketHandler(tornado.websocket.WebSocketHandler):
         logging.info("Disconnecting twitter stream")
         self.twitter_stream.disconnect()
 
+    def check_origin(self, origin):
+        return True
+
+    def open(self):
+        logging.info("Websocket opened")
+
+    def on_message(self, message):
+        logging.info("Received websocket message: " + message)
+        data = json.loads(message)
+
+        if data['event'] != 'set_keyword':
+            return
+
+        self.twitter_stream.disconnect()
+        self.led_bar.start(threshold=data['threshold'])
+        self.twitter_stream.filter(track=[data['keyword']], async=True)
+
+        self.write_message(json.dumps({'event': 'set_keyword', 'success': True}))
+
+    def on_close(self):
+        logging.info("Websocket closed")
+        self.twitter_stream.disconnect()
+        self.led_bar.stop()
+
     def init_twitter_stream(self, api_keys):
         """Initializes twitter Stream object"""
         auth = tweepy.OAuthHandler(api_keys['ckey'], api_keys['csecret'])
@@ -37,26 +61,4 @@ class WebsocketHandler(tornado.websocket.WebSocketHandler):
         }
 
         self.write_message(json.dumps(data))
-        self.led_bar.start()
-        # self.led_bar.tick()
-
-    def check_origin(self, origin):
-        return True
-
-    def open(self):
-        logging.info("Websocket opened")
-
-    def on_message(self, message):
-        logging.info("Received websocket message: " + message)
-        data = json.loads(message)
-
-        if data['event'] != 'set_keyword':
-            return
-
-        self.twitter_stream.disconnect()
-        self.twitter_stream.filter(track=[data['keyword']], async=True)
-        self.write_message(json.dumps({'event': 'set_keyword', 'success': True}))
-
-    def on_close(self):
-        logging.info("Websocket closed")
-        self.twitter_stream.disconnect()
+        self.led_bar.tick()
