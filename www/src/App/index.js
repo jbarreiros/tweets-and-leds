@@ -8,9 +8,6 @@ class App extends Component {
   constructor(props) {
     super(props);
 
-    this.ws = new Socket('ws://rasppiboyee.lan:9000/ws');
-    this.ws.register('new_tweet', this.onNewTweet);
-
     this.state = {
       keyword: '',
       threshold: null,
@@ -18,20 +15,29 @@ class App extends Component {
     };
   }
 
+  componentDidMount() {
+    this.ws = new Socket('ws://rasppiboyee.lan:9000/ws');
+    this.ws.register('new_tweet', this.onNewTweet);
+    this.ws.register('current_config', this.onConfigChanged);
+  }
+
+  componentWillUnmount() {
+    this.ws.close();
+  }
+
   render() {
     return (
       <div className="app">
-        <ConfigForm onSubmit={this.changeConfig} />
+        <ConfigForm onSubmit={this.saveConfig} />
         <StreamLog
           keyword={this.state.keyword}
-          threshold={this.state.threshold}
           tweetList={this.state.tweetList}
         />
       </div>
     );
   }
 
-  changeConfig = (keyword, threshold) => {
+  saveConfig = (keyword, threshold) => {
     this.setState({keyword, threshold, tweetList: []});
     this.ws.sendMessage('set_keyword', {keyword, threshold});
   }
@@ -44,6 +50,11 @@ class App extends Component {
     }
 
     this.setState({tweetList});
+  }
+
+  onConfigChanged = (data) => {
+    data.tweetList = [];
+    this.setState(data);
   }
 }
 

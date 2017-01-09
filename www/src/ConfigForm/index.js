@@ -4,9 +4,7 @@ import './config-form.css';
 class SearchForm extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      threshold: 10,
-    };
+    this.state = this.getInitFormValues();
   }
 
   render() {
@@ -17,7 +15,8 @@ class SearchForm extends Component {
           <input
             type="text" id="keyword" required
             placeholder="E.g. javascript"
-            ref={(input) => this._keyword = input} />
+            value={this.state.keyword}
+            onChange={this.handleKeywordChange} />
         </div>
         <div className="mb2">
           <label className="block" htmlFor="threshold">Threshold</label>
@@ -36,6 +35,12 @@ class SearchForm extends Component {
     );
   }
 
+  handleKeywordChange = (e) => {
+    this.setState({
+      keyword: e.target.value,
+    });
+  }
+
   handleThresholdChange = (e) => {
     this.setState({
       threshold: e.target.value,
@@ -44,7 +49,15 @@ class SearchForm extends Component {
 
   handleSubmit = (e) => {
     e.preventDefault();
-    this.props.onSubmit(this._keyword.value, this.state.threshold);
+    this.props.onSubmit(this.state.keyword, this.state.threshold);
+    this.setState(this.getInitFormValues());
+  }
+
+  getInitFormValues() {
+    return {
+      keyword: '',
+      threshold: 30
+    };
   }
 }
 

@@ -10,8 +10,11 @@ import logging
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
+import tweepy
 
 from lib.websocket import WebsocketHandler
+from lib.ledbar import ThresholdLedBar
+from lib.listener import TwitterStreamListener
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -30,15 +33,29 @@ def main():
     root_dir = os.path.join(parent_dir, 'www/build')
     static_dir = os.path.join(parent_dir, 'www/build/static')
 
+    # websocket clients
+    clients = set()
+
+    # led bar controller
+    led_bar = ThresholdLedBar(config['led_gpio_pins'])
+
+    # twitter stream
+    twitter_auth = tweepy.OAuthHandler(config['twitter_api']['ckey'], config['twitter_api']['csecret'])
+    twitter_auth.set_access_token(config['twitter_api']['atoken'], config['twitter_api']['asecret'])
+    twitter_stream_listener = TwitterStreamListener(clients=clients, led_bar=led_bar)
+    twitter_stream = tweepy.Stream(twitter_auth, twitter_stream_listener)
+
+    # tornado settings
     settings = {
         "debug": config['debug'],
     }
 
+    # tornado routes
     urls = [
         (r'/', IndexHandler),
         (r'/(favicon\.ico)', tornado.web.StaticFileHandler, dict(path=root_dir)),
         (r'/static/(.*)', tornado.web.StaticFileHandler, dict(path=static_dir)),
-        (r'/ws', WebsocketHandler, dict(config=config)),
+        (r'/ws', WebsocketHandler, dict(clients=clients, led_bar=led_bar, stream=twitter_stream)),
     ]
 
     application = tornado.web.Application(urls, **settings)
@@ -50,6 +67,11 @@ def main():
     try:
         tornado.ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:
+        logging.info("Closing app...")
+        twitter_stream.disconnect()
+        logging.info("Stream disconnected!")
+        led_bar.stop()
+        logging.info("LED bar reset")
         sys.exit(0)
 
 if __name__ == '__main__':

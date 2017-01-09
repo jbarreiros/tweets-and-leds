@@ -3,22 +3,24 @@
 import json
 import logging
 import tornado.websocket
-import tweepy
-
-from lib.ledbar import ThresholdLedBar
-from lib.listener import TwitterStreamListener
 
 class WebsocketHandler(tornado.websocket.WebSocketHandler):
     """Websocket handler"""
 
-    def initialize(self, config):
-        logging.info("initializing websocket")
-        self.led_bar = ThresholdLedBar(config['led_gpio_pins'])
-        self.twitter_stream = self.init_twitter_stream(config['twitter_api'])
+    active_client = None
+    """The client that set the current keyword and threshold"""
 
-    def __del__(self):
-        logging.info("Disconnecting twitter stream")
-        self.twitter_stream.disconnect()
+    keyword = None
+    """The keyword currently being used to filter the stream"""
+
+    threshold = None
+    """The threshold currently being used to on the ledbar"""
+
+    def initialize(self, clients, led_bar, stream):
+        logging.info("initializing websocket")
+        self.clients = clients
+        self.led_bar = led_bar
+        self.twitter_stream = stream
 
     def check_origin(self, origin):
         return True
@@ -26,39 +28,52 @@ class WebsocketHandler(tornado.websocket.WebSocketHandler):
     def open(self):
         logging.info("Websocket opened")
 
+        self.clients.add(self)
+
+        if WebsocketHandler.keyword != None:
+            self.notify(self.get_current_config_message())
+
+    def on_close(self):
+        logging.info("Websocket closed")
+        self.clients.remove(self)
+
     def on_message(self, message):
         logging.info("Received websocket message: " + message)
         data = json.loads(message)
 
-        if data['event'] != 'set_keyword':
-            return
+        if data['event'] == 'stop':
+            WebsocketHandler.keyword = None
+            WebsocketHandler.threshold = None
+            self.twitter_stream.disconnect()
+            self.led_bar.stop()
+            self.notify({'event': 'stop', 'success': True})
 
-        self.twitter_stream.disconnect()
-        self.led_bar.start(threshold=data['threshold'])
-        self.twitter_stream.filter(track=[data['keyword']], async=True)
+        elif data['event'] == 'set_keyword':
+            self.twitter_stream.disconnect()
+            self.led_bar.start(threshold=data['threshold'])
+            self.twitter_stream.filter(track=[data['keyword']], async=True)
+            WebsocketHandler.keyword = data['keyword']
+            WebsocketHandler.threshold = data['threshold']
+            self.notify({'event': 'set_keyword', 'success': True})
 
-        self.write_message(json.dumps({'event': 'set_keyword', 'success': True}))
+        self.broadcast(self.get_current_config_message())
 
-    def on_close(self):
-        logging.info("Websocket closed")
-        self.twitter_stream.disconnect()
-        self.led_bar.stop()
-
-    def init_twitter_stream(self, api_keys):
-        """Initializes twitter Stream object"""
-        auth = tweepy.OAuthHandler(api_keys['ckey'], api_keys['csecret'])
-        auth.set_access_token(api_keys['atoken'], api_keys['asecret'])
-
-        listener = TwitterStreamListener(api=None, on_status_callback=self.on_tweet)
-        return tweepy.Stream(auth, listener)
-
-    def on_tweet(self, tweet):
-        """TwitterStreamListener callback"""
-        data = {
-            'event': 'new_tweet',
-            'id': tweet.id,
-            'text': tweet.text,
+    def get_current_config_message(self):
+        return {
+            'event': 'current_config',
+            'keyword': WebsocketHandler.keyword,
+            'threshold': WebsocketHandler.threshold
         }
 
-        self.write_message(json.dumps(data))
-        self.led_bar.tick()
+    def notify(self, data):
+        payload = json.dumps(data)
+        self.write_message(payload)
+
+    def broadcast(self, data):
+        """Sends message to every connected client"""
+        payload = json.dumps(data)
+        for client in self.clients:
+            try:
+                client.write_message(payload)
+            except tornado.websocket.WebSocketClosedError:
+                logging.error("Error sending websocket message", exc_info=True)
